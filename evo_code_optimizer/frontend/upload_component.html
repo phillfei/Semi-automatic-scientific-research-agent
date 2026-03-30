@@ -1,0 +1,165 @@
+<!-- 
+简化版文件夹上传组件
+使用方法：
+1. 直接引入此文件
+2. 或通过 iframe 嵌入
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; padding: 20px; }
+        
+        .upload-box {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-box:hover { border-color: #667eea; background: #f8f9ff; }
+        
+        .file-input { display: none; }
+        
+        .btn {
+            padding: 10px 24px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-secondary { background: #f0f0f0; color: #666; }
+        
+        .file-list { margin-top: 15px; max-height: 200px; overflow-y: auto; }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .status { margin-top: 10px; font-size: 13px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="upload-box" id="dropZone">
+        <p>📁 点击或拖拽文件夹/文件到此处</p>
+        <div style="margin-top: 15px;">
+            <button class="btn btn-primary" onclick="selectFolder()">选择文件夹</button>
+            <button class="btn btn-secondary" onclick="selectFiles()">选择文件</button>
+        </div>
+        <input type="file" id="folderInput" class="file-input" webkitdirectory directory multiple>
+        <input type="file" id="fileInput" class="file-input" multiple accept=".ogg,.wav,.mp3,.flac,.ipynb">
+    </div>
+    
+    <div class="file-list" id="fileList"></div>
+    <div class="progress-bar" id="progressBar" style="display: none;">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="status" id="status"></div>
+
+    <script>
+        const API_URL = (new URLSearchParams(location.search).get('api') || 'http://localhost:8000/api/upload');
+        let files = [];
+        
+        const $ = id => document.getElementById(id);
+        
+        function formatSize(b) {
+            if (b === 0) return '0 B';
+            const i = Math.floor(Math.log(b) / Math.log(1024));
+            return (b / Math.pow(1024, i)).toFixed(1) + ' ' + ['B','KB','MB','GB'][i];
+        }
+        
+        function selectFolder() { $('folderInput').click(); }
+        function selectFiles() { $('fileInput').click(); }
+        
+        function handleFiles(fileList) {
+            files = [...fileList].filter(f => {
+                const ext = '.' + f.name.split('.').pop().toLowerCase();
+                return ['.ogg','.wav','.mp3','.flac','.m4a','.ipynb'].includes(ext);
+            });
+            updateList();
+        }
+        
+        function updateList() {
+            $('fileList').innerHTML = files.map((f, i) => `
+                <div class="file-item">
+                    <span>${f.name}</span>
+                    <span>${formatSize(f.size)}</span>
+                </div>
+            `).join('');
+            $('status').textContent = `共 ${files.length} 个文件，总计 ${formatSize(files.reduce((a,f)=>a+f.size,0))}`;
+            if (files.length > 0) uploadFiles();
+        }
+        
+        async function uploadFiles() {
+            $('progressBar').style.display = 'block';
+            $('status').textContent = '上传中...';
+            
+            const batchSize = 10;
+            let uploaded = 0;
+            
+            for (let i = 0; i < files.length; i += batchSize) {
+                const batch = files.slice(i, i + batchSize);
+                const formData = new FormData();
+                formData.append('target_folder', './uploads');
+                batch.forEach(f => formData.append('files', f));
+                
+                try {
+                    const res = await fetch(`${API_URL}/upload/files`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (res.ok) uploaded += batch.length;
+                } catch (e) {
+                    console.error(e);
+                }
+                
+                $('progressFill').style.width = ((i + batchSize) / files.length * 100) + '%';
+            }
+            
+            $('status').textContent = `上传完成: ${uploaded}/${files.length}`;
+            $('progressFill').style.width = '100%';
+            
+            // 通知父窗口
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'uploadComplete', count: uploaded }, '*');
+            }
+        }
+        
+        // 事件监听
+        $('folderInput').onchange = e => handleFiles(e.target.files);
+        $('fileInput').onchange = e => handleFiles(e.target.files);
+        
+        // 拖拽
+        $('dropZone').ondragover = e => { e.preventDefault(); $('dropZone').style.borderColor = '#667eea'; };
+        $('dropZone').ondragleave = () => { $('dropZone').style.borderColor = '#ccc'; };
+        $('dropZone').ondrop = e => {
+            e.preventDefault();
+            $('dropZone').style.borderColor = '#ccc';
+            handleFiles(e.dataTransfer.files);
+        };
+        $('dropZone').onclick = () => selectFolder();
+    </script>
+</body>
+</html>
