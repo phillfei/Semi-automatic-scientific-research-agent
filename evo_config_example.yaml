@@ -1,0 +1,99 @@
+# EvoAgentX 配置示例
+# 复制此文件为 evo_config.yaml 并修改以自定义行为
+
+# ============= 特性开关 =============
+# 参考 src 的 feature flags 设计
+# 可通过环境变量覆盖: EVO_FEATURE_XXX=true
+features:
+  # 核心特性
+  iterative_search: true           # 迭代搜索优化关键词
+  knowledge_base: true             # 知识库复用搜索结果
+  incremental_code: true           # 增量代码生成模式
+  
+  # Agent 特性
+  supervisor_eda: true             # Supervisor EDA 分析
+  supervisor_history: true         # 历史反馈分析
+  search_keyword_refine: true      # 关键词动态调整
+  engineer_patch_mode: true        # Patch 模式代码生成
+  
+  # 工作流特性
+  parallel_search: true            # 并行搜索
+  dynamic_workflow: false          # 动态工作流（实验性）
+  hitl_approval: false             # 人工审批（默认关闭）
+  
+  # 实验特性
+  advanced_eda: false              # 高级 EDA
+  multi_agent_vote: false          # 多 Agent 投票
+  auto_test: false                 # 自动测试
+  
+  # 调试特性
+  debug_prompts: false             # 打印完整提示词
+  debug_llm_calls: true            # 记录 LLM 调用
+  save_intermediate: false         # 保存中间结果
+
+# ============= Agent 配置 =============
+agent:
+  # Supervisor 配置
+  supervisor_max_directions: 3
+  supervisor_eda_sample_size: 5
+  supervisor_history_limit: 5
+  
+  # Search 配置
+  search_max_workers: 3
+  search_time_limit_minutes: 5
+  search_papers_per_query: 3
+  search_arxiv_delay_seconds: 3.0
+  
+  # Engineer 配置
+  engineer_code_style: "incremental"  # incremental | full_replace | patch
+  engineer_include_tests: true
+  engineer_validation_level: "basic"  # none | basic | strict
+  
+  # LLM 配置
+  llm_temperature: 0.3
+  llm_max_tokens: 4000
+
+# ============= 工作流配置 =============
+workflow:
+  # 节点启用控制
+  enable_research: true
+  enable_search: true
+  enable_implement: true
+  enable_test: false
+  
+  # 流程控制
+  require_hitl_after_research: false
+  require_hitl_after_search: false
+  auto_retry_on_failure: true
+  max_retry_count: 2
+  
+  # 并行控制
+  parallel_search: true
+  parallel_implement: false
+
+# ============= 输出配置 =============
+output:
+  output_dir: "./output"
+  save_backup: true
+  save_merged_example: true
+  save_integration_guide: true
+  save_search_reports: true
+  
+  # 日志配置
+  log_level: "INFO"
+  log_to_file: true
+  log_dir: "./logs"
+
+# ============= 自定义配置 =============
+custom:
+  # 项目特定配置
+  project_type: "competition"  # competition | research | production
+  
+  # 数据类型特定配置
+  audio_analysis:
+    sample_rate: 32000
+    window_sec: 5
+  
+  image_analysis:
+    target_size: [224, 224]
+    normalize: true

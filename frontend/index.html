@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI代码优化系统 - EvoAgentX</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        header h1 { font-size: 2.2em; margin-bottom: 10px; }
+        header p { font-size: 1em; opacity: 0.9; }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            font-size: 1.3em;
+        }
+        
+        .form-group { margin-bottom: 18px; }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input[type="text"], input[type="number"], textarea, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea { resize: vertical; min-height: 80px; }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5a67d8; transform: translateY(-1px); }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-success:hover { background: #38a169; }
+        .btn-secondary { background: #e2e8f0; color: #4a5568; }
+        .btn-secondary:hover { background: #cbd5e0; }
+        .btn-danger { background: #f56565; color: white; }
+        
+        .drop-zone {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+        
+        .file-list {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .file-item:last-child { border-bottom: none; }
+        
+        .section-desc {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        
+        .required::after {
+            content: " *";
+            color: #e53e3e;
+        }
+        
+        .optional-badge {
+            display: inline-block;
+            background: #e2e8f0;
+            color: #4a5568;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+            font-weight: normal;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .project-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .project-item {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .project-item:hover, .project-item.selected {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+        
+        .project-item h4 {
+            font-size: 15px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .project-item p {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .hidden { display: none !important; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .agent-status {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .agent-step {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            margin: 4px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid transparent;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        
+        .agent-step.active { border-color: #667eea; background: #eef2ff; }
+        .agent-step.completed { border-color: #48bb78; background: #f0fff4; }
+        .agent-step.error { border-color: #f56565; background: #fff5f5; }
+        
+        #progress-log {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry { margin-bottom: 4px; }
+        .log-error { color: #e53e3e; }
+        .log-warning { color: #dd6b20; }
+        .log-success { color: #38a169; }
+        
+        .current-project-bar {
+            background: #667eea;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .toggle-section {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            background: #fafafa;
+        }
+        
+        .toggle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .toggle-header h3 {
+            font-size: 15px;
+            color: #333;
+        }
+        
+        .toggle-icon {
+            font-size: 12px;
+            color: #888;
+            transition: transform 0.3s;
+        }
+        
+        .toggle-section.open .toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        .toggle-content {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .toggle-section.open .toggle-content {
+            display: block;
+        }
+        
+        .history-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 AI代码优化系统</h1>
+            <p>多Agent协调 · 智能迭代 · 项目级历史共享</p>
+        </header>
+        
+        <!-- ========== 步骤1: 项目选择 ========== -->
+        <div id="step-project" class="card">
+            <h2>📁 步骤1: 选择或创建项目</h2>
+            <p class="section-desc">
+                同一项目的所有任务共享历史记录和知识库，便于持续优化
+            </p>
+            
+            <div id="project-list" class="project-list">
+                <!-- 动态加载项目列表 -->
+            </div>
+            
+            <div class="form-group">
+                <label class="required">项目名称</label>
+                <input type="text" id="new-project-name" placeholder="输入项目名称，例如：birdclif优化">
+            </div>
+            <button class="btn btn-success" onclick="createOrSelectProject()">确定项目</button>
+        </div>
+        
+        <!-- ========== 步骤2: 上传与配置 ========== -->
+        <div id="step-upload" class="card hidden">
+            <div class="current-project-bar">
+                <div>
+                    <strong>当前项目:</strong> <span id="current-project-name">未选择</span>
+                    <span id="project-history-badge" class="history-badge hidden">历史: 0</span>
+                </div>
+                <button class="btn btn-secondary" onclick="switchProject()" style="padding: 6px 14px; font-size: 12px;">切换项目</button>
+            </div>
+            
+            <h2>📂 步骤2: 上传文件与配置</h2>
+            
+            <!-- 赛题介绍HTML -->
+            <div class="form-group">
+                <label class="required">📄 赛题介绍 HTML 文件</label>
+                <p class="section-desc">上传竞赛或项目的HTML介绍文件，帮助Agent理解背景和目标</p>
+                <div class="drop-zone" onclick="document.getElementById('html-file').click()">
+                    <div style="font-size: 1.8em; margin-bottom: 6px;">📄</div>
+                    <div id="html-file-name">点击选择 HTML 文件</div>
+                    <input type="file" id="html-file" accept=".html,.htm" style="display: none;" onchange="handleFileSelect(event, 'html')">
+                </div>
+            </div>
+            
+            <!-- 事例数据文件 -->
+            <div class="form-group">
+                <label class="required">📊 事例数据文件</label>
+                <p class="section-desc">上传样例数据文件或整个数据文件夹（CSV/JSON/TXT/OGG等），让Agent分析数据结构和特征。支持音频OGG文件和文件夹上传。</p>
+                
+                <!-- 文件夹上传 -->
+                <div class="drop-zone" onclick="document.getElementById('data-folder').click()" style="margin-bottom: 10px;">
+                    <div style="font-size: 1.8em; margin-bottom: 6px;">📁</div>
+                    <div id="data-folder-name">点击选择数据文件夹</div>
+                    <input type="file" id="data-folder" webkitdirectory directory multiple accept=".csv,.json,.txt,.npz,.npy,.parquet,.xlsx,.ogg,.wav,.mp3" style="display: none;" onchange="handleFileSelect(event, 'data-folder')">
+                </div>
+                
+                <div style="text-align: center; color: #999; margin: 10px 0; font-size: 12px;">— 或上传单个文件 —</div>
+                
+                <!-- 单个文件上传 -->
+                <div class="drop-zone" onclick="document.getElementById('data-file').click()">
+                    <div style="font-size: 1.8em; margin-bottom: 6px;">📄</div>
+                    <div id="data-file-name">点击选择单个数据文件</div>
+                    <input type="file" id="data-file" accept=".csv,.json,.txt,.npz,.npy,.parquet,.xlsx,.ogg,.wav,.mp3" style="display: none;" onchange="handleFileSelect(event, 'data')">
+                </div>
+                <div id="data-preview" class="file-list hidden"></div>
+            </div>
+            
+            <!-- 用户指令 -->
+            <div class="form-group">
+                <label class="required">📝 用户指令 / 优化目标</label>
+                <p class="section-desc">清晰描述你的优化目标、约束条件和特殊要求</p>
+                <textarea id="task-instruction" placeholder="例如：优化半监督学习中的伪标签策略，要求在不增加模型复杂度的情况下提升AUC指标..."></textarea>
+            </div>
+            
+            <!-- 搜索Agent时间配置 -->
+            <div class="form-group">
+                <label>⏱️ 搜索Agent时间限制（分钟）</label>
+                <p class="section-desc">设置搜索Agent持续了解主管Agent目标的时间（越长搜索结果越全面）</p>
+                <input type="number" id="search-time-limit" value="5" min="1" max="60">
+            </div>
+            
+            <!-- 可选：代码优化 -->
+            <div class="toggle-section" id="code-opt-section">
+                <div class="toggle-header" onclick="toggleCodeOpt()">
+                    <h3>💻 可选：代码优化 <span class="optional-badge">可选</span></h3>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="toggle-content">
+                    <p class="section-desc">上传现有的 Python (.py) 或 Jupyter Notebook (.ipynb) 文件，Agent将基于这些代码进行优化</p>
+                    <div class="drop-zone" onclick="document.getElementById('code-file').click()">
+                        <div style="font-size: 1.8em; margin-bottom: 6px;">💻</div>
+                        <div id="code-file-name">点击选择 .py 或 .ipynb 文件（可多选）</div>
+                        <input type="file" id="code-file" accept=".py,.ipynb" multiple style="display: none;" onchange="handleFileSelect(event, 'code')">
+                    </div>
+                    <div id="code-file-list" class="file-list hidden"></div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 25px;">
+                <button class="btn btn-primary" style="font-size: 1.1em; padding: 14px 36px;" onclick="startWorkflow()">
+                    🚀 开始自动生成代码
+                </button>
+            </div>
+        </div>
+        
+        <!-- ========== 步骤3: 执行进度 ========== -->
+        <div id="step-progress" class="card hidden">
+            <h2>⚙️ 自动生成代码中...</h2>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="workflow-progress">0%</div>
+            </div>
+            
+            <div id="current-agent-status" style="text-align: center; font-size: 1.1em; color: #667eea; margin: 15px 0;">
+                准备开始...
+            </div>
+            
+            <div class="agent-status">
+                <div class="agent-step" id="step-supervisor">
+                    <div style="font-size: 1.8em;">🎯</div>
+                    <div>主管Agent</div>
+                    <div style="font-size: 11px; color: #666;">深度研究</div>
+                </div>
+                <div class="agent-step" id="step-search">
+                    <div style="font-size: 1.8em;">🔍</div>
+                    <div>搜索Agent</div>
+                    <div style="font-size: 11px; color: #666;">并行检索</div>
+                </div>
+                <div class="agent-step" id="step-engineer">
+                    <div style="font-size: 1.8em;">👨‍💻</div>
+                    <div>工程师Agent</div>
+                    <div style="font-size: 11px; color: #666;">生成代码</div>
+                </div>
+            </div>
+            
+            <div id="progress-log"></div>
+        </div>
+        
+        <!-- ========== 步骤4: 完成 ========== -->
+        <div id="step-complete" class="card hidden">
+            <h2>✅ 代码生成完成！</h2>
+            
+            <div style="background: #f0fff4; border: 2px solid #48bb78; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #276749; margin-bottom: 15px;">📦 生成的代码文件</h3>
+                <div id="generated-files-list"></div>
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="btn btn-primary" onclick="location.reload()">
+                    🔄 开始新任务
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ========== 全局状态 ==========
+        let currentProject = null;
+        let uploadedFiles = {
+            html: null,
+            data: null,
+            dataFolder: [],
+            code: []
+        };
+        let dataFileIsBinary = false;
+        let dataFileUploadedPath = null;
+        let currentTaskId = null;
+        let pollInterval = null;
+        
+        // ========== 初始化 ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProjects();
+        });
+        
+        // ========== 项目相关 ==========
+        async function loadProjects() {
+            try {
+                const response = await fetch('/api/projects');
+                if (!response.ok) return;
+                const data = await response.json();
+                const list = document.getElementById('project-list');
+                
+                if (data.projects && data.projects.length > 0) {
+                    let html = '';
+                    data.projects.forEach(p => {
+                        html += `<div class="project-item" onclick="selectProject('${p.name}')">
+                            <h4>${p.name}</h4>
+                            <p>历史: ${p.history_count} | 任务: ${p.task_count}</p>
+                        </div>`;
+                    });
+                    list.innerHTML = html;
+                } else {
+                    list.innerHTML = '<p style="color: #888; font-size: 13px;">暂无项目，请在下方创建</p>';
+                }
+            } catch (e) {
+                console.error('加载项目失败:', e);
+            }
+        }
+        
+        function selectProject(name) {
+            document.querySelectorAll('.project-item').forEach(el => el.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            document.getElementById('new-project-name').value = name;
+        }
+        
+        async function createOrSelectProject() {
+            const name = document.getElementById('new-project-name').value.trim();
+            if (!name) {
+                alert('请输入项目名称');
+                return;
+            }
+            
+            // 创建或确认项目
+            try {
+                const response = await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                });
+                const data = await response.json();
+                
+                currentProject = name;
+                document.getElementById('current-project-name').textContent = name;
+                
+                // 加载历史数量
+                const historyRes = await fetch(`/api/projects/${encodeURIComponent(name)}/history`);
+                if (historyRes.ok) {
+                    const historyData = await historyRes.json();
+                    const badge = document.getElementById('project-history-badge');
+                    badge.textContent = `历史: ${historyData.history.length}`;
+                    badge.classList.remove('hidden');
+                }
+                
+                document.getElementById('step-project').classList.add('hidden');
+                document.getElementById('step-upload').classList.remove('hidden');
+            } catch (e) {
+                alert('项目创建失败: ' + e.message);
+            }
+        }
+        
+        function switchProject() {
+            currentProject = null;
+            uploadedFiles = { html: null, data: null, code: [] };
+            document.getElementById('step-upload').classList.add('hidden');
+            document.getElementById('step-project').classList.remove('hidden');
+            loadProjects();
+        }
+        
+        // ========== 文件上传 ==========
+        function handleFileSelect(e, type) {
+            const files = e.target.files;
+            if (type === 'html') {
+                uploadedFiles.html = files[0];
+                document.getElementById('html-file-name').textContent = files[0].name;
+            } else if (type === 'data') {
+                uploadedFiles.data = files[0];
+                uploadedFiles.dataFolder = []; // 清空文件夹选择
+                document.getElementById('data-file-name').textContent = files[0].name;
+                document.getElementById('data-folder-name').textContent = '点击选择数据文件夹';
+                const preview = document.getElementById('data-preview');
+                
+                // 判断是否为二进制音频文件
+                const binaryExts = ['.ogg', '.wav', '.mp3', '.npz', '.npy'];
+                const isBinary = binaryExts.some(ext => files[0].name.toLowerCase().endsWith(ext));
+                dataFileIsBinary = isBinary;
+                
+                if (isBinary) {
+                    preview.innerHTML = `<strong>文件信息:</strong> <span style="color:#667eea">${files[0].name} (${(files[0].size/1024).toFixed(1)} KB)</span> - 二进制文件，将在后端解析`;
+                    preview.classList.remove('hidden');
+                } else {
+                    // 预览数据文件前500字符
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        let text = ev.target.result;
+                        if (text.length > 500) text = text.substring(0, 500) + '...';
+                        preview.innerHTML = `<strong>数据预览:</strong><pre style="margin-top:8px; white-space:pre-wrap; word-break:break-all; background:#f8f9fa; padding:8px; border-radius:4px;">${text.replace(/</g, '&lt;')}</pre>`;
+                        preview.classList.remove('hidden');
+                    };
+                    reader.readAsText(files[0]);
+                }
+            } else if (type === 'data-folder') {
+                uploadedFiles.dataFolder = Array.from(files);
+                uploadedFiles.data = null; // 清空单个文件选择
+                dataFileIsBinary = false;
+                document.getElementById('data-folder-name').textContent = `已选择文件夹 (${files.length} 个文件)`;
+                document.getElementById('data-file-name').textContent = '点击选择单个数据文件';
+                
+                const preview = document.getElementById('data-preview');
+                // 显示前10个文件
+                let html = `<strong>文件夹内容预览 (共 ${files.length} 个文件):</strong>`;
+                html += '<div style="margin-top:8px; max-height:150px; overflow-y:auto;">';
+                const showFiles = uploadedFiles.dataFolder.slice(0, 20);
+                showFiles.forEach(f => {
+                    const ext = f.name.split('.').pop().toLowerCase();
+                    let icon = '📄';
+                    if (['ogg', 'wav', 'mp3'].includes(ext)) icon = '🎵';
+                    else if (['csv', 'json', 'txt'].includes(ext)) icon = '📊';
+                    else if (['npz', 'npy'].includes(ext)) icon = '🔢';
+                    html += `<div class="file-item" style="padding:3px 0; font-size:12px;"><span>${icon} ${f.webkitRelativePath || f.name}</span><span style="color:#999">${(f.size/1024).toFixed(1)} KB</span></div>`;
+                });
+                if (uploadedFiles.dataFolder.length > 20) {
+                    html += `<div style="color:#888; font-size:12px; padding:3px 0;">... 还有 ${uploadedFiles.dataFolder.length - 20} 个文件</div>`;
+                }
+                html += '</div>';
+                preview.innerHTML = html;
+                preview.classList.remove('hidden');
+            } else if (type === 'code') {
+                uploadedFiles.code = Array.from(files);
+                document.getElementById('code-file-name').textContent = `${files.length} 个文件`;
+                
+                const list = document.getElementById('code-file-list');
+                let html = '';
+                Array.from(files).forEach(f => {
+                    html += `<div class="file-item"><span>💻 ${f.name}</span><span style="color:#999">${(f.size/1024).toFixed(1)} KB</span></div>`;
+                });
+                list.innerHTML = html;
+                list.classList.remove('hidden');
+            }
+        }
+        
+        function toggleCodeOpt() {
+            document.getElementById('code-opt-section').classList.toggle('open');
+        }
+        
+        // ========== 工作流执行 ==========
+        async function startWorkflow() {
+            // 验证必填项
+            if (!uploadedFiles.html) {
+                alert('请上传赛题介绍 HTML 文件');
+                return;
+            }
+            if (!uploadedFiles.data && uploadedFiles.dataFolder.length === 0) {
+                alert('请上传事例数据文件或文件夹');
+                return;
+            }
+            const instruction = document.getElementById('task-instruction').value.trim();
+            if (!instruction) {
+                alert('请输入用户指令 / 优化目标');
+                return;
+            }
+            
+            document.getElementById('step-upload').classList.add('hidden');
+            document.getElementById('step-progress').classList.remove('hidden');
+            
+            // 读取文件内容
+            let htmlContent = '';
+            let dataContent = '';
+            let dataSamplePath = '';
+            let dataSampleFilename = '';
+            let dataSampleFolder = '';
+            let codeContent = '';
+            
+            try {
+                if (uploadedFiles.html) {
+                    htmlContent = await uploadedFiles.html.text();
+                }
+                if (uploadedFiles.data) {
+                    dataSampleFilename = uploadedFiles.data.name;
+                    if (dataFileIsBinary) {
+                        // 二进制文件先上传到服务器
+                        addLog('📤 正在上传数据文件到服务器...');
+                        const formData = new FormData();
+                        formData.append('files', uploadedFiles.data);
+                        formData.append('target_folder', `./data/uploads/${currentProject}`);
+                        formData.append('preserve_structure', 'false');
+                        const uploadRes = await fetch('/api/upload/upload/files', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        if (!uploadRes.ok) throw new Error('数据文件上传失败');
+                        const uploadData = await uploadRes.json();
+                        dataSamplePath = `./data/uploads/${currentProject}/${uploadedFiles.data.name}`;
+                        addLog(`✅ 数据文件已上传: ${uploadedFiles.data.name}`);
+                    } else {
+                        dataContent = await uploadedFiles.data.text();
+                    }
+                } else if (uploadedFiles.dataFolder.length > 0) {
+                    // 上传整个文件夹
+                    addLog(`📤 正在上传数据文件夹 (${uploadedFiles.dataFolder.length} 个文件)...`);
+                    const formData = new FormData();
+                    uploadedFiles.dataFolder.forEach(f => formData.append('files', f));
+                    formData.append('target_folder', `./data/uploads/${currentProject}/data`);
+                    formData.append('preserve_structure', 'true');
+                    const uploadRes = await fetch('/api/upload/upload/files', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!uploadRes.ok) throw new Error('数据文件夹上传失败');
+                    dataSampleFolder = `./data/uploads/${currentProject}/data`;
+                    addLog(`✅ 数据文件夹已上传: ${uploadedFiles.dataFolder.length} 个文件`);
+                }
+                if (uploadedFiles.code.length > 0) {
+                    for (const file of uploadedFiles.code) {
+                        if (file.name.endsWith('.py')) {
+                            codeContent += `# File: ${file.name}\n`;
+                            codeContent += await file.text() + '\n\n';
+                        } else if (file.name.endsWith('.ipynb')) {
+                            codeContent += `# File: ${file.name}\n`;
+                            try {
+                                const notebookContent = await file.text();
+                                const notebook = JSON.parse(notebookContent);
+                                if (notebook.cells && Array.isArray(notebook.cells)) {
+                                    for (let i = 0; i < notebook.cells.length; i++) {
+                                        const cell = notebook.cells[i];
+                                        if (cell.cell_type === 'code' && cell.source) {
+                                            const source = Array.isArray(cell.source) 
+                                                ? cell.source.join('') 
+                                                : cell.source;
+                                            codeContent += `# Cell ${i + 1}\n${source}\n\n`;
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                console.error(`解析 ${file.name} 失败:`, e);
+                                codeContent += `# Error parsing ${file.name}\n\n`;
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                addLog(`❌ 读取文件失败: ${e.message}`, 'error');
+                return;
+            }
+            
+            const searchTimeLimit = parseInt(document.getElementById('search-time-limit').value) || 5;
+            
+            try {
+                addLog('🚀 正在启动 Agent 工作流...');
+                addLog('⏱️ 预计耗时 5-10 分钟，请耐心等待...');
+                
+                // 创建 AbortController 用于 10 分钟超时控制
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => {
+                    controller.abort();
+                    addLog('⚠️ 请求超时（10分钟），但任务可能仍在后台运行', 'warning');
+                }, 600000); // 10 分钟 = 600,000 毫秒
+                
+                const response = await fetch('/workflow/optimize', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Connection': 'keep-alive'
+                    },
+                    body: JSON.stringify({
+                        project_name: currentProject,
+                        html_content: htmlContent,
+                        data_sample_content: dataContent,
+                        data_sample_path: dataSamplePath,
+                        data_sample_filename: dataSampleFilename,
+                        data_sample_folder: dataSampleFolder,
+                        code_content: codeContent,
+                        instruction: instruction,
+                        search_time_limit: searchTimeLimit
+                    }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId); // 请求成功，清除超时
+                
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || `启动失败: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                currentTaskId = data.task_id;
+                addLog(`✅ 任务已创建: ${currentTaskId}`);
+                startPolling(currentTaskId);
+                
+            } catch (error) {
+                addLog(`❌ 启动失败: ${error.message}`, 'error');
+                updateStepStatus('supervisor', 'error');
+            }
+        }
+        
+        function startPolling(taskId) {
+            pollTaskStatus(taskId);
+            pollInterval = setInterval(() => pollTaskStatus(taskId), 2000);
+        }
+        
+        async function pollTaskStatus(taskId) {
+            try {
+                const response = await fetch(`/workflow/task/${taskId}`);
+                if (!response.ok) throw new Error('获取状态失败');
+                
+                const task = await response.json();
+                updateProgress(task.progress);
+                document.getElementById('current-agent-status').textContent = task.current_step || '执行中...';
+                updateStepByProgress(task.progress);
+                
+                if (task.logs && task.logs.length > 0) {
+                    const lastLog = task.logs[task.logs.length - 1];
+                    addLog(lastLog.message, lastLog.level);
+                }
+                
+                if (task.status === 'completed') {
+                    clearInterval(pollInterval);
+                    addLog('✨ 工作流执行完成！', 'success');
+                    showComplete(task.results);
+                } else if (task.status === 'failed') {
+                    clearInterval(pollInterval);
+                    addLog(`❌ 任务失败: ${task.error}`, 'error');
+                    updateStepStatus('engineer', 'error');
+                } else if (task.status === 'cancelled') {
+                    clearInterval(pollInterval);
+                    addLog('⚠️ 任务已取消', 'warning');
+                }
+            } catch (error) {
+                console.error('轮询失败:', error);
+            }
+        }
+        
+        function updateStepByProgress(progress) {
+            if (progress >= 0) updateStepStatus('supervisor', 'active');
+            if (progress >= 20) updateStepStatus('supervisor', 'completed');
+            if (progress >= 25) updateStepStatus('search', 'active');
+            if (progress >= 55) updateStepStatus('search', 'completed');
+            if (progress >= 60) updateStepStatus('engineer', 'active');
+            if (progress >= 90) updateStepStatus('engineer', 'completed');
+        }
+        
+        function updateStepStatus(stepId, status) {
+            const el = document.getElementById(`step-${stepId}`);
+            if (!el) return;
+            el.classList.remove('active', 'completed', 'error');
+            el.classList.add(status);
+        }
+        
+        function updateProgress(percent) {
+            document.getElementById('workflow-progress').textContent = `${percent}%`;
+            document.getElementById('workflow-progress').style.width = `${percent}%`;
+        }
+        
+        function addLog(message, level = 'info') {
+            const log = document.getElementById('progress-log');
+            const time = new Date().toLocaleTimeString();
+            let cssClass = '';
+            switch(level) {
+                case 'error': cssClass = 'log-error'; break;
+                case 'warning': cssClass = 'log-warning'; break;
+                case 'success': cssClass = 'log-success'; break;
+            }
+            log.innerHTML += `<div class="log-entry ${cssClass}">[${time}] ${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function showComplete(results) {
+            document.getElementById('step-progress').classList.add('hidden');
+            document.getElementById('step-complete').classList.remove('hidden');
+            
+            const container = document.getElementById('generated-files-list');
+            let html = '';
+            
+            if (results && results.generated_files && results.generated_files.length > 0) {
+                html += `<div style="margin-bottom:15px; padding:10px; background:#e8f5e9; border-radius:6px; color:#2e7d32;">
+                    <strong>✅ 代码已生成并保存到: ${results.output_dir || './output'}</strong>
+                </div>`;
+                
+                results.generated_files.forEach((item, idx) => {
+                    html += `<div class="file-item" style="margin-bottom:15px; padding:15px; background:white; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="font-weight:600; font-size:16px; margin-bottom:8px; color:#333;">
+                            方向 ${idx + 1}: ${item.direction || '未命名'}
+                        </div>
+                        <div style="font-size:12px; color:#666; margin-bottom:10px; line-height:1.5;">
+                            ${item.main_code_preview || ''}
+                        </div>`;
+                    
+                    // 显示保存的文件
+                    if (item.saved_files && item.saved_files.length > 0) {
+                        html += `<div style="margin-top:10px; padding:10px; background:#f5f5f5; border-radius:4px;">
+                            <div style="font-size:12px; color:#666; margin-bottom:5px;">生成的文件:</div>`;
+                        item.saved_files.forEach(filePath => {
+                            const fileName = filePath.split('/').pop();
+                            html += `<div style="font-size:11px; color:#2196F3; font-family:monospace; margin:2px 0;">
+                                📄 ${fileName}
+                            </div>`;
+                        });
+                        html += `</div>`;
+                    }
+                    
+                    html += `</div>`;
+                });
+            } else {
+                html = '<p style="color:#666;">未生成代码文件</p>';
+            }
+            
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
